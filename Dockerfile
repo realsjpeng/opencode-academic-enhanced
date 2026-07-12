@@ -121,7 +121,7 @@ COPY skills/agent-browser/SKILL.md /home/user/.claude/skills/agent-browser/SKILL
 # ---- academic-writing-skills (latex-paper-en, latex-thesis-zh, typst-paper, bib-search-citation, paper-audit, cover-letter) ----
 RUN git clone --depth 1 --single-branch https://github.com/bahayonghang/academic-writing-skills.git /tmp/academic-skills \
     && for skill in latex-paper-en latex-thesis-zh typst-paper bib-search-citation paper-audit cover-letter; do \
-        cp -r /tmp/academic-skills/$skill /home/user/.claude/skills/$skill; \
+        cp -r /tmp/academic-skills/academic-writing-skills/$skill /home/user/.claude/skills/$skill; \
     done \
     && rm -rf /tmp/academic-skills
 
