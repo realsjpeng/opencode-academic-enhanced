@@ -1,0 +1,9 @@
+node_modules
+__pycache__/
+*.pyc
+.venv
+*.pptx
+.env
+opencode-data/
+data/
+.DS_Store

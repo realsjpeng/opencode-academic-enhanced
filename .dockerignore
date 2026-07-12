@@ -1,0 +1,11 @@
+.github
+.git
+.gitignore
+node_modules
+__pycache__
+*.pyc
+.venv
+qa/
+unpacked/
+*.pptx
+*.md

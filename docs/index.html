@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenCode Academic Enhanced</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --accent: #10b981;
+    --warning: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .slide {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 60px 40px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .slide-number {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    opacity: 0.5;
+  }
+  h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+  }
+  h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid var(--primary);
+  }
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.8rem;
+  }
+  .subtitle {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5rem;
+  }
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.2rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .card h3 { color: var(--primary); }
+  .card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .card-sm {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+  }
+  .tag {
+    display: inline-block;
+    background: #dbeafe;
+    color: var(--primary);
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-right: 4px;
+    margin-bottom: 4px;
+  }
+  .tag.green { background: #d1fae5; color: #065f46; }
+  .tag.purple { background: #ede9fe; color: #5b21b6; }
+  .tag.orange { background: #fef3c7; color: #92400e; }
+  .code-block {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    overflow-x: auto;
+    line-height: 1.5;
+  }
+  .code-block .comment { color: #94a3b8; }
+  .flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+  }
+  .flow-step {
+    background: var(--primary);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .flow-step.green { background: var(--accent); }
+  .flow-step.purple { background: #7c3aed; }
+  .flow-step.orange { background: var(--warning); }
+  .flow-arrow { font-size: 1.5rem; color: var(--text-secondary); }
+  .badge {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .nav-arrows {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 1rem;
+  }
+  .nav-arrows button {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+  .nav-arrows button:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .hero {
+    text-align: center;
+    padding: 2rem 0;
+  }
+  .hero p { font-size: 1.15rem; color: var(--text-secondary); max-width: 700px; margin: 0.5rem auto; }
+  .hero-badge {
+    display: inline-block;
+    background: #dbeafe;
+    color: var(--primary);
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .btn {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: var(--primary-dark); }
+  .btn-outline {
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+  }
+  .btn-outline:hover { background: var(--primary); color: white; }
+  .flex-center { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+  .num { font-size: 2rem; font-weight: 800; color: var(--primary); }
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .toc-item:hover {
+    border-color: var(--primary);
+    transform: translateX(4px);
+  }
+  .toc-item .toc-icon { font-size: 1.5rem; }
+  .toc-item .toc-label { font-weight: 600; font-size: 0.95rem; }
+  .toc-item .toc-desc { font-size: 0.8rem; color: var(--text-secondary); }
+  .step-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 1.5rem 0;
+  }
+  .step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  .step-num {
+    background: var(--primary);
+    color: white;
+    min-width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  .step-num.green { background: var(--accent); }
+  .step-num.purple { background: #7c3aed; }
+  .step-num.orange { background: var(--warning); }
+  .step-body { flex: 1; }
+  .step-connector {
+    width: 2px;
+    min-height: 24px;
+    background: var(--border);
+    margin-left: 17px;
+  }
+  .output-tag {
+    display: inline-block;
+    background: #fef3c7;
+    color: #92400e;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .lang-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 100;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary);
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .lang-toggle:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  @media (max-width: 768px) {
+    .slide { padding: 40px 20px; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.4rem; }
+    .step-row { flex-direction: column; gap: 0.5rem; }
+    .step-connector { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<button class="lang-toggle" onclick="toggleLanguage()" id="langBtn">English</button>
+
+<!-- Slide 1: Cover -->
+<div class="slide" id="slide1">
+  <div class="hero">
+    <div class="hero-badge" data-i18n="badge">🐳 Docker · OpenCode · 学术全家桶</div>
+    <h1>OpenCode Academic Enhanced</h1>
+    <p data-i18n="subtitle">普通用户使用指南<br>预装 Document Skills · agent-browser · academic-writing<br>开箱即用的 AI 工作流助手</p>
+    <div class="flex-center" style="margin-top:2rem">
+      <a href="https://github.com/realsjpeng/opencode-academic-enhanced" class="btn" target="_blank" data-i18n="githubBtn">GitHub 仓库</a>
+      <a href="#" class="btn btn-outline" onclick="nextSlide(); return false;" data-i18n="startBtn">开始了解 →</a>
+    </div>
+  </div>
+  <div class="slide-number">1 <span data-i18n="of">/</span> 10</div>
+</div>
+
+<!-- Slide 2: TOC -->
+<div class="slide" id="slide2">
+  <h2 data-i18n="tocTitle">📖 目录</h2>
+  <div style="display:flex; flex-direction:column; gap:0.8rem; margin-top:1.5rem">
+    <div class="toc-item" onclick="showSlide(3)">
+      <div class="toc-icon">🤖</div>
+      <div><div class="toc-label" data-i18n="toc1">OpenCode 简介</div><div class="toc-desc" data-i18n="toc1d">什么是 OpenCode？为什么用 Docker 版本？</div></div>
+    </div>
+    <div class="toc-item" onclick="showSlide(4)">
+      <div class="toc-icon">⚡</div>
+      <div><div class="toc-label" data-i18n="toc2">快速开始</div><div class="toc-desc" data-i18n="toc2d">三种方式选择最适合你的</div></div>
+    </div>
+    <div class="toc-item" onclick="showSlide(5)">
+      <div class="toc-icon">📋</div>
+      <div><div class="toc-label" data-i18n="toc3">预装 Skills</div><div class="toc-desc" data-i18n="toc3d">三大 Skill 集合覆盖办公全流程</div></div>
+    </div>
+    <div class="toc-item" onclick="showSlide(6)">
+      <div class="toc-icon">🔍</div>
+      <div><div class="toc-label" data-i18n="toc4">文献检索</div><div class="toc-desc" data-i18n="toc4d">检索学术文章，提取 Idea，保存引用</div></div>
+    </div>
+    <div class="toc-item" onclick="showSlide(7)">
+      <div class="toc-icon">🧪</div>
+      <div><div class="toc-label" data-i18n="toc5">论文复现</div><div class="toc-desc" data-i18n="toc5d">获取代码，复现实验，验证结果</div></div>
+    </div>
+    <div class="toc-item" onclick="showSlide(8)">
+      <div class="toc-icon">✍️</div>
+      <div><div class="toc-label" data-i18n="toc6">论文写作</div><div class="toc-desc" data-i18n="toc6d">生成初稿，填入数据，投稿前检查</div></div>
+    </div>
+    <div class="toc-item" onclick="showSlide(9)">
+      <div class="toc-icon">📎</div>
+      <div><div class="toc-label" data-i18n="toc7">快速参考</div><div class="toc-desc" data-i18n="toc7d">一行命令 + 三步流程整合</div></div>
+    </div>
+  </div>
+  <div class="slide-number">2 <span data-i18n="of">/</span> 10</div>
+</div>
+
+<!-- Slide 3: What is OpenCode + Why Docker -->
+<div class="slide" id="slide3">
+  <h2 data-i18n="introTitle">🤖 OpenCode 简介</h2>
+  <p class="subtitle" data-i18n="introSub">OpenCode 是一款开源的 AI 编程与任务自动化助手，通过自然语言与 AI 模型交互完成编码、文档、调研等各种任务。</p>
+  <div class="grid-4" style="margin-top:1rem">
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.8rem; margin-bottom:0.3rem">🔓</div>
+      <div style="font-weight:600; font-size:0.9rem" data-i18n="introF1">100% 开源</div>
+      <div style="font-size:0.75rem; color:var(--text-secondary)">GitHub 164k+ stars</div>
+    </div>
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.8rem; margin-bottom:0.3rem">🧠</div>
+      <div style="font-weight:600; font-size:0.9rem" data-i18n="introF2">多模型支持</div>
+      <div style="font-size:0.75rem; color:var(--text-secondary)">Claude / GPT / Gemini / Ollama</div>
+    </div>
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.8rem; margin-bottom:0.3rem">🧩</div>
+      <div style="font-weight:600; font-size:0.9rem" data-i18n="introF3">Skill 插件生态</div>
+      <div style="font-size:0.75rem; color:var(--text-secondary)" data-i18n="introF3d">可复用指令集，按需加载</div>
+    </div>
+    <div class="card-sm" style="text-align:center">
+      <div style="font-size:1.8rem; margin-bottom:0.3rem">🔄</div>
+      <div style="font-weight:600; font-size:0.9rem" data-i18n="introF4">子代理并行</div>
+      <div style="font-size:0.75rem; color:var(--text-secondary)" data-i18n="introF4d">Plan/Build/@general 分工</div>
+    </div>
+  </div>
+
+  <h2 style="margin-top:2rem" data-i18n="dockerTitle">🐳 为什么选择 Docker 版本？</h2>
+  <div class="grid-3" style="margin-top:1rem">
+    <div class="card">
+      <div class="icon">📦</div>
+      <h3 data-i18n="dockerC1">开箱即用</h3>
+      <p style="font-size:0.9rem" data-i18n="dockerC1d">预装所有 Skill 及运行时依赖（TeX Live、LibreOffice、Chrome、Typst 等），无需手动安装任何软件。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔄</div>
+      <h3 data-i18n="dockerC2">环境一致</h3>
+      <p style="font-size:0.9rem" data-i18n="dockerC2d">开发、测试、生产使用同一镜像，消除环境差异问题。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🛡️</div>
+      <h3 data-i18n="dockerC3">安全隔离</h3>
+      <p style="font-size:0.9rem" data-i18n="dockerC3d">容器与宿主机隔离，权限可控。</p>
+    </div>
+  </div>
+  <div class="slide-number">3 <span data-i18n="of">/</span> 10</div>
+</div>
+
+<!-- Slide 4: Quick Start -->
+<div class="slide" id="slide4">
+  <h2 data-i18n="qsTitle">⚡ 快速开始</h2>
+  <p class="subtitle" data-i18n="qsSub">三种方式，选择最适合你的</p>
+  <div class="grid-3" style="margin-top:1.5rem">
+    <div class="card" style="text-align:center">
+      <div class="big-icon" style="font-size:2rem; color:var(--primary); font-weight:800">A</div>
+      <h3 data-i18n="qsA">一键脚本 <span class="badge" data-i18n="recommended">推荐</span></h3>
+      <p style="font-size:0.85rem; margin:0.5rem 0" data-i18n="qsAsub">适用于 Linux / macOS / WSL</p>
+      <div class="code-block" style="font-size:0.72rem; text-align:left" data-i18n="scriptCmd"></div>
+      <div style="margin-top:0.8rem; font-size:0.8rem; color:var(--text-secondary)">
+        <span data-i18n="qsA1">✅ 自动检测网络</span><br>
+        <span data-i18n="qsA2">✅ 交互式配置</span><br>
+        <span data-i18n="qsA3">✅ 端口冲突自递增</span><br>
+        <span data-i18n="qsA4">✅ 支持升级已有容器</span>
+      </div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="big-icon" style="font-size:2rem; color:var(--accent); font-weight:800">B</div>
+      <h3 data-i18n="qsB">Docker Compose</h3>
+      <div class="code-block" style="font-size:0.72rem; text-align:left">
+        curl -fsSL .../docker-compose.yml<br>
+        curl -fsSL .../.env.example \<br>
+        &nbsp;&nbsp;&gt; .env<br>
+        docker compose up -d
+      </div>
+      <div style="margin-top:0.8rem; font-size:0.8rem; color:var(--text-secondary)">
+        <span data-i18n="qsB1">✅ 环境变量自定义</span><br>
+        <span data-i18n="qsB2">✅ .env 配置管理</span>
+      </div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="big-icon" style="font-size:2rem; color:#7c3aed; font-weight:800">C</div>
+      <h3 data-i18n="qsC">手动 Docker</h3>
+      <div class="code-block" style="font-size:0.72rem; text-align:left">
+        docker pull ghcr.io/<br>
+        &nbsp;&nbsp;realsjpeng/<br>
+        &nbsp;&nbsp;opencode-academic-enhanced<br><br>
+        docker run -d -p 4096:4096 \<br>
+        &nbsp;&nbsp;--name opencode-academic \<br>
+        &nbsp;&nbsp;ghcr.io/...
+      </div>
+      <div style="margin-top:0.8rem; font-size:0.8rem; color:var(--text-secondary)">
+        <span data-i18n="qsC1">✅ 最灵活</span><br>
+        <span data-i18n="qsC2">✅ 适用于 CI/CD</span>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:1.5rem">
+    <p data-i18n="qsFooter">启动后访问 <strong>http://127.0.0.1:4096</strong> 即可开始使用</p>
+  </div>
+  <div class="slide-number">4 <span data-i18n="of">/</span> 10</div>
+</div>
+
+<!-- Slide 5: Pre-installed Skills -->
+<div class="slide" id="slide5">
+  <h2 data-i18n="skillTitle">📋 预装 Skill 一览</h2>
+  <p class="subtitle" data-i18n="skillSub">三大 Skill 集合覆盖办公全流程</p>
+  <div class="grid-3" style="margin-top:1.5rem">
+    <div class="card" style="text-align:center">
+      <div class="icon">📄</div>
+      <h3 data-i18n="skillDocs">文档 Skills</h3>
+      <p style="font-size:0.85rem">docx · pdf · xlsx · pptx</p>
+      <p style="font-size:0.8rem; color:var(--text-secondary)" data-i18n="skillDocsSub">创建、编辑、转换各类办公文档格式</p>
+      <span class="tag">anthropics/skills</span>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="icon">🔍</div>
+      <h3 data-i18n="skillSearch">搜索 & 浏览</h3>
+      <p style="font-size:0.85rem" data-i18n="skillBuiltinText">websearch · webfetch (内置)</p>
+      <p style="font-size:0.8rem; color:var(--text-secondary)" data-i18n="skillSearchSub">网页搜索与内容抓取，无需额外 API Key</p>
+      <span class="tag green" data-i18n="noInstall">无需安装</span>
+    </div>
+    <div class="card" style="text-align:center">
+      <div class="icon">✍️</div>
+      <h3 data-i18n="skillAcademic">academic-writing</h3>
+      <p style="font-size:0.85rem">LaTeX / Typst / 论文 / 引用</p>
+      <p style="font-size:0.8rem; color:var(--text-secondary)" data-i18n="skillAcademicSub">学术写作、审稿检查、投稿信生成</p>
+      <span class="tag orange">bahayonghang</span>
+    </div>
+  </div>
+  <div style="margin-top:2rem; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:1.2rem">
+    <div style="display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap; justify-content:center">
+      <span class="badge">websearch</span>
+      <span style="color:var(--text-secondary)">→</span>
+      <span class="badge" style="background:var(--warning)">📄 bib</span>
+      <span style="color:var(--text-secondary)">→</span>
+      <span class="badge" style="background:var(--accent)">docx/pptx</span>
+      <span style="color:var(--text-secondary)">→</span>
+      <span class="badge" style="background:#7c3aed">academic-writing</span>
+    </div>
+    <p style="text-align:center; margin-top:0.8rem; font-size:0.85rem; color:var(--text-secondary)" data-i18n="skillFooter">单一 AI 对话即可完成从调研到产出的完整工作流</p>
+  </div>
+  <div class="slide-number">5 <span data-i18n="of">/</span> 10</div>
+</div>
+
+<!-- Slide 6: Workflow Step 1 -->
+<div class="slide" id="slide6">
+  <h2 data-i18n="s1Title">🔍 Step 1：文献检索与 Idea 搜寻</h2>
+  <div class="step-flow">
+    <div class="step-row">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3 data-i18n="s1s1">使用 websearch 检索学术文章</h3>
+        <p style="font-size:0.9rem; color:var(--text-secondary)" data-i18n="s1s1d">在 arXiv / Google Scholar 中搜索最新论文，获取标题、摘要、作者信息</p>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step-row">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3 data-i18n="s1s2">AI 分析筛选</h3>
+        <p style="font-size:0.9rem; color:var(--text-secondary)" data-i18n="s1s2d">自动筛选高价值文献，提取关键信息与 Idea</p>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step-row">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3 data-i18n="s1s3">保存引用到 BibTeX</h3>
+        <p style="font-size:0.9rem; color:var(--text-secondary)" data-i18n="s1s3d">将引用写入 references.bib，供后续论文使用</p>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:1rem; background:#f0fdf4; border-color:#bbf7d0">
+    <h3 style="color:#065f46" data-i18n="tellAI">🗣️ 告诉 AI</h3>
+    <p style="font-size:0.9rem" data-i18n="s1prompt">"用 websearch 从 arXiv 搜索 10 篇关于 AI agent 的最新论文，整理成调研报告（html 和 ppt 格式，use_skill pptx），选出最有价值的 idea，并保存引用信息到 bib 文件。"</p>
+  </div>
+  <div style="margin-top:1rem">
+    <span class="output-tag">📄 <span data-i18n="s1o1">调研报告.pptx</span></span>
+    <span class="output-tag">📄 references.bib</span>
+    <span class="output-tag">💡 <span data-i18n="s1o2">Idea 推荐</span></span>
+  </div>
+  <div class="slide-number">6 <span data-i18n="of">/</span> 10</div>
+</div>
+
+<!-- Slide 7: Workflow Step 2 -->
+<div class="slide" id="slide7">
+  <h2 data-i18n="s2Title">🧪 Step 2：论文复现</h2>
+  <div class="step-flow">
+    <div class="step-row">
+      <div class="step-num green">1</div>
+      <div class="step-body">
+        <h3 data-i18n="s2s1">获取代码与数据</h3>
+        <p style="font-size:0.9rem; color:var(--text-secondary)" data-i18n="s2s1d">使用 agent-browser 下载论文官方代码与实验数据集</p>
+      </div>
+    </div>
+    <div class="step-connector" style="background:var(--accent)"></div>
+    <div class="step-row">
+      <div class="step-num green">2</div>
+      <div class="step-body">
+        <h3 data-i18n="s2s2">在容器中复现实验</h3>
+        <p style="font-size:0.9rem; color:var(--text-secondary)" data-i18n="s2s2d">容器已预装 Python / Node.js / TeX Live 等运行时，自动配置环境并运行核心实验</p>
+      </div>
+    </div>
+    <div class="step-connector" style="background:var(--accent)"></div>
+    <div class="step-row">
+      <div class="step-num green">3</div>
+      <div class="step-body">
+        <h3 data-i18n="s2s3">生成复现报告</h3>
+        <p style="font-size:0.9rem; color:var(--text-secondary)" data-i18n="s2s3d">整理复现过程与结果，使用 docx/pdf Skill 输出验证报告</p>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:1rem; background:#f0fdf4; border-color:#bbf7d0">
+          <h3 style="color:#065f46" data-i18n="tellAI">🗣️ 告诉 AI</h3>
+    <p style="font-size:0.9rem" data-i18n="s2prompt">"找到 Step 1 中筛选出的 high-value 论文，下载官方代码与数据集，在容器中复现核心实验，验证结果是否可复现。生成复现验证报告（docx 和 pdf 格式，use_skill docx pdf）。"</p>
+  </div>
+  <div style="margin-top:1rem">
+    <span class="output-tag">📄 <span data-i18n="s2o1">复现验证报告.docx</span></span>
+    <span class="output-tag">📁 <span data-i18n="s2o2">代码与数据整理</span></span>
+    <span class="output-tag">📊 <span data-i18n="s2o3">实验关键图表</span></span>
+  </div>
+  <div class="slide-number">7 <span data-i18n="of">/</span> 10</div>
+</div>
+
+<!-- Slide 8: Workflow Step 3 -->
+<div class="slide" id="slide8">
+  <h2 data-i18n="s3Title">✍️ Step 3：论文写作与投稿</h2>
+  <div class="step-flow">
+    <div class="step-row">
+      <div class="step-num purple">①</div>
+      <div class="step-body">
+        <h3 data-i18n="s3s1">准备阶段</h3>
+        <p style="font-size:0.9rem; color:var(--text-secondary)" data-i18n="s3s1d">使用 Step 1 & 2 产出的 references.bib 和复现报告作为背景材料</p>
+      </div>
+    </div>
+    <div class="step-connector" style="background:#7c3aed"></div>
+    <div class="step-row">
+      <div class="step-num purple">②</div>
+      <div class="step-body">
+        <h3 data-i18n="s3s2">AI 生成初稿</h3>
+        <p style="font-size:0.9rem; color:var(--text-secondary)" data-i18n="s3s2d">academic-writing 自动选择 LaTeX / Typst 模板：标题、摘要、引言、方法、实验框架，自动插入引用</p>
+      </div>
+    </div>
+    <div class="step-connector" style="background:#7c3aed"></div>
+    <div class="step-row">
+      <div class="step-num purple">③</div>
+      <div class="step-body">
+        <h3 data-i18n="s3s3">用户填入核心数据</h3>
+        <p style="font-size:0.9rem; color:var(--text-secondary)" data-i18n="s3s3d">AI 生成框架后暂停，你提供实验表格和图片，AI 自动排版为三线表</p>
+      </div>
+    </div>
+    <div class="step-connector" style="background:#7c3aed"></div>
+    <div class="step-row">
+      <div class="step-num purple">④</div>
+      <div class="step-body">
+        <h3 data-i18n="s3s4">投稿前检查</h3>
+        <p style="font-size:0.9rem; color:var(--text-secondary)" data-i18n="s3s4d">使用 paper-audit 审稿式检查，cover-letter 生成投稿信，一键投稿就绪</p>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:1rem; background:#f0fdf4; border-color:#bbf7d0">
+          <h3 style="color:#065f46" data-i18n="tellAI">🗣️ 告诉 AI</h3>
+    <p style="font-size:0.9rem" data-i18n="s3prompt">"整合复现的 Step 2 baseline，将最有价值的 idea 搭建成论文的框架（tex 格式并编译成 pdf，use_skill latex-paper-en bib-search-citation）。"</p>
+  </div>
+  <div style="margin-top:1rem">
+    <span class="output-tag">📄 <span data-i18n="s3o1">论文初稿.tex/.typ</span></span>
+    <span class="output-tag">📄 cover-letter.pdf</span>
+    <span class="output-tag">✅ <span data-i18n="s3o2">paper-audit 报告</span></span>
+  </div>
+  <div class="slide-number">8 <span data-i18n="of">/</span> 10</div>
+</div>
+
+<!-- Slide 9: Quick Reference -->
+<div class="slide" id="slide9">
+  <h2 data-i18n="refTitle">📎 快速参考</h2>
+  <div class="code-block" style="font-size:0.85rem; margin-top:1rem; text-align:left" data-i18n="scriptRef"></div>
+  <div style="text-align:center; margin-top:0.8rem">
+    <p style="font-size:1.1rem" data-i18n="refOpen">打开浏览器访问 <strong>http://127.0.0.1:4096</strong></p>
+  </div>
+
+  <div class="flow" style="margin-top:2rem">
+    <div class="flow-step" onclick="showSlide(6)" style="cursor:pointer"><span data-i18n="refStep1">Step 1 文献检索</span></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step green" onclick="showSlide(7)" style="cursor:pointer"><span data-i18n="refStep2">Step 2 论文复现</span></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step purple" onclick="showSlide(8)" style="cursor:pointer"><span data-i18n="refStep3">Step 3 论文写作</span></div>
+  </div>
+  <div style="text-align:center; font-size:1.1rem; font-weight:600; color:var(--primary-dark); margin-top:0.5rem" data-i18n="refFlow">
+    检索 → 复现 → 论文 → 投稿
+  </div>
+
+  <div class="grid-3" style="margin-top:2rem">
+    <div class="card" style="text-align:center; padding:1rem">
+      <div class="num" style="font-size:1.5rem">🔍</div>
+      <p style="font-weight:600; font-size:0.9rem" data-i18n="refC1">Step 1</p>
+      <p style="font-size:0.8rem; color:var(--text-secondary)" data-i18n="refC1d">文献检索 → references.bib</p>
+    </div>
+    <div class="card" style="text-align:center; padding:1rem">
+      <div class="num" style="font-size:1.5rem">🧪</div>
+      <p style="font-weight:600; font-size:0.9rem" data-i18n="refC2">Step 2</p>
+      <p style="font-size:0.8rem; color:var(--text-secondary)" data-i18n="refC2d">论文复现 → 验证报告</p>
+    </div>
+    <div class="card" style="text-align:center; padding:1rem">
+      <div class="num" style="font-size:1.5rem">✍️</div>
+      <p style="font-weight:600; font-size:0.9rem" data-i18n="refC3">Step 3</p>
+      <p style="font-size:0.8rem; color:var(--text-secondary)" data-i18n="refC3d">论文写作 → 投稿就绪</p>
+    </div>
+  </div>
+  <div class="slide-number">9 <span data-i18n="of">/</span> 10</div>
+</div>
+
+<!-- Slide 10: License & Links -->
+<div class="slide" id="slide10">
+  <h2 data-i18n="licenseTitle">📄 许可 & 资源</h2>
+  <div class="grid-2" style="margin-top:1.5rem">
+    <div class="card">
+      <h3 data-i18n="licenseH">GNU General Public License v3.0</h3>
+      <p data-i18n="licenseP">本项目采用 GPLv3 开源协议。镜像中打包的第三方工具（TeX Live、Chrome、LibreOffice 等）遵循各自的开源许可。</p>
+    </div>
+    <div class="card">
+      <h3 data-i18n="linksH">相关链接</h3>
+      <ul style="padding-left:1.2rem">
+        <li><a href="https://github.com/realsjpeng/opencode-academic-enhanced" data-i18n="link1">GitHub 仓库</a></li>
+        <li><a href="https://opencode.ai" data-i18n="link2">OpenCode 官方文档</a></li>
+        <li><a href="https://github.com/anomalyco/opencode" data-i18n="link3">OpenCode 源码</a></li>
+        <li><a href="https://github.com/anthropics/skills">Anthropic Skills</a></li>
+        <li><a href="https://github.com/bahayonghang/academic-writing-skills">Academic Writing Skills</a></li>
+        <li><a href="https://github.com/vercel-labs/agent-browser">agent-browser</a></li>
+      </ul>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:3rem; color:var(--text-secondary)">
+    <p>Thank you ☕</p>
+  </div>
+  <div class="slide-number">10 <span data-i18n="of">/</span> 10</div>
+</div>
+
+<div class="nav-arrows">
+  <button onclick="prevSlide()">←</button>
+  <button onclick="nextSlide()">→</button>
+</div>
+
+<script>
+const i18n = {
+  zh: {
+    badge: "🐳 Docker · OpenCode · 学术全家桶",
+    subtitle: "普通用户使用指南<br>预装 Document Skills · agent-browser · academic-writing<br>开箱即用的 AI 工作流助手",
+    githubBtn: "GitHub 仓库",
+    startBtn: "开始了解 →",
+    of: "/",
+    tocTitle: "📖 目录",
+    toc1: "OpenCode 简介",
+    toc1d: "什么是 OpenCode？为什么用 Docker 版本？",
+    toc2: "快速开始",
+    toc2d: "三种方式选择最适合你的",
+    toc3: "预装 Skills",
+    toc3d: "三大 Skill 集合覆盖办公全流程",
+    toc4: "文献检索",
+    toc4d: "检索学术文章，提取 Idea，保存引用",
+    toc5: "论文复现",
+    toc5d: "获取代码，复现实验，验证结果",
+    toc6: "论文写作",
+    toc6d: "生成初稿，填入数据，投稿前检查",
+    toc7: "快速参考",
+    toc7d: "一行命令 + 三步流程整合",
+    introTitle: "🤖 OpenCode 简介",
+    introSub: "OpenCode 是一款开源的 AI 编程与任务自动化助手，通过自然语言与 AI 模型交互完成编码、文档、调研等各种任务。",
+    introF1: "100% 开源",
+    introF2: "多模型支持",
+    introF3: "Skill 插件生态",
+    introF3d: "可复用指令集，按需加载",
+    introF4: "子代理并行",
+    introF4d: "Plan/Build/@general 分工",
+    dockerTitle: "🐳 为什么选择 Docker 版本？",
+    dockerC1: "开箱即用",
+    dockerC1d: "预装所有 Skill 及运行时依赖（TeX Live、LibreOffice、Chrome、Typst 等），无需手动安装任何软件。",
+    dockerC2: "环境一致",
+    dockerC2d: "开发、测试、生产使用同一镜像，消除环境差异问题。",
+    dockerC3: "安全隔离",
+    dockerC3d: "容器与宿主机隔离，权限可控。",
+    qsTitle: "⚡ 快速开始",
+    qsSub: "三种方式，选择最适合你的",
+    qsA: "一键脚本 ",
+    recommended: "推荐",
+    qsAsub: "适用于 Linux / macOS / WSL",
+    qsA1: "✅ 自动检测网络",
+    qsA2: "✅ 交互式配置",
+    qsA3: "✅ 端口冲突自递增",
+    qsA4: "✅ 支持升级已有容器",
+    qsB: "Docker Compose",
+    qsB1: "✅ 环境变量自定义",
+    qsB2: "✅ .env 配置管理",
+    qsC: "手动 Docker",
+    qsC1: "✅ 最灵活",
+    qsC2: "✅ 适用于 CI/CD",
+    qsFooter: "启动后访问 <strong>http://127.0.0.1:4096</strong> 即可开始使用",
+    skillTitle: "📋 预装 Skill 一览",
+    skillSub: "三大 Skill 集合覆盖办公全流程",
+    skillDocs: "文档 Skills",
+    skillDocsSub: "创建、编辑、转换各类办公文档格式",
+    skillSearch: "搜索 & 浏览",
+    skillSearchSub: "网页搜索与内容抓取，无需额外 API Key",
+    skillBuiltinText: "websearch · webfetch (内置)",
+    noInstall: "无需安装",
+    skillAcademic: "academic-writing",
+    skillAcademicSub: "学术写作、审稿检查、投稿信生成",
+    skillFooter: "单一 AI 对话即可完成从调研到产出的完整工作流",
+    s1Title: "🔍 Step 1：文献检索与 Idea 搜寻",
+    s1s1: "使用 websearch 检索学术文章",
+    s1s1d: "在 arXiv / Google Scholar 中搜索最新论文，获取标题、摘要、作者信息",
+    s1s2: "AI 分析筛选",
+    s1s2d: "自动筛选高价值文献，提取关键信息与 Idea",
+    s1s3: "保存引用到 BibTeX",
+    s1s3d: "将引用写入 references.bib，供后续论文使用",
+    tellAI: "🗣️ 告诉 AI",
+    s1prompt: "\"用 websearch 从 arXiv 搜索 10 篇关于 AI agent 的最新论文，整理成调研报告（html 和 ppt 格式，use_skill pptx），选出最有价值的 idea，并保存引用信息到 bib 文件。\"",
+    s1o1: "调研报告.pptx",
+    s1o2: "Idea 推荐",
+    s2Title: "🧪 Step 2：论文复现",
+    s2s1: "获取代码与数据",
+    s2s1d: "使用 agent-browser 下载论文官方代码与实验数据集",
+    s2s2: "在容器中复现实验",
+    s2s2d: "容器已预装 Python / Node.js / TeX Live 等运行时，自动配置环境并运行核心实验",
+    s2s3: "生成复现报告",
+    s2s3d: "整理复现过程与结果，使用 docx/pdf Skill 输出验证报告",
+    s2prompt: "\"找到 Step 1 中筛选出的 high-value 论文，下载官方代码与数据集，在容器中复现核心实验，验证结果是否可复现。生成复现验证报告（docx 和 pdf 格式，use_skill docx pdf）。\"",
+    s2o1: "复现验证报告.docx",
+    s2o2: "代码与数据整理",
+    s2o3: "实验关键图表",
+    s3Title: "✍️ Step 3：论文写作与投稿",
+    s3s1: "准备阶段",
+    s3s1d: "使用 Step 1 & 2 产出的 references.bib 和复现报告作为背景材料",
+    s3s2: "AI 生成初稿",
+    s3s2d: "academic-writing 自动选择 LaTeX / Typst 模板：标题、摘要、引言、方法、实验框架，自动插入引用",
+    s3s3: "用户填入核心数据",
+    s3s3d: "AI 生成框架后暂停，你提供实验表格和图片，AI 自动排版为三线表",
+    s3s4: "投稿前检查",
+    s3s4d: "使用 paper-audit 审稿式检查，cover-letter 生成投稿信，一键投稿就绪",
+    s3prompt: "\"整合复现的 Step 2 baseline，将最有价值的 idea 搭建成论文的框架（tex 格式并编译成 pdf，use_skill latex-paper-en bib-search-citation）。\"",
+    s3o1: "论文初稿.tex/.typ",
+    s3o2: "paper-audit 报告",
+    refTitle: "📎 快速参考",
+    refOpen: "打开浏览器访问 <strong>http://127.0.0.1:4096</strong>",
+    refStep1: "Step 1 文献检索",
+    refStep2: "Step 2 论文复现",
+    refStep3: "Step 3 论文写作",
+    refFlow: "检索 → 复现 → 论文 → 投稿",
+    refC1: "Step 1",
+    refC1d: "文献检索 → references.bib",
+    refC2: "Step 2",
+    refC2d: "论文复现 → 验证报告",
+    refC3: "Step 3",
+    refC3d: "论文写作 → 投稿就绪",
+    licenseTitle: "📄 许可 & 资源",
+    licenseH: "GNU General Public License v3.0",
+    licenseP: "本项目采用 GPLv3 开源协议。镜像中打包的第三方工具（TeX Live、Chrome、LibreOffice 等）遵循各自的开源许可。",
+    linksH: "相关链接",
+    link1: "GitHub 仓库",
+    link2: "OpenCode 官方文档",
+    link3: "OpenCode 源码",
+    scriptCmd: 'bash &lt;(curl -fsSL<br>&nbsp;&nbsp;ghfast.top/raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/<br>&nbsp;&nbsp;opencode-academic-enhanced/<br>&nbsp;&nbsp;main/start.sh)',
+    scriptRef: 'bash &lt;(curl -fsSL https://ghfast.top/raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.sh)',
+    langToggle: "English",
+  },
+  en: {
+    badge: "🐳 Docker · OpenCode · Academic Suite",
+    subtitle: "User Guide for Everyone<br>Pre-installed: Document Skills · agent-browser · academic-writing<br>One-command AI research workflow assistant",
+    githubBtn: "GitHub Repository",
+    startBtn: "Get Started →",
+    of: "/",
+    tocTitle: "📖 Contents",
+    toc1: "What is OpenCode?",
+    toc1d: "Background & why the Docker edition",
+    toc2: "Quick Start",
+    toc2d: "Three ways to get started",
+    toc3: "Pre-installed Skills",
+    toc3d: "Three skill collections for full workflow",
+    toc4: "Literature Search",
+    toc4d: "Search, extract ideas, save citations",
+    toc5: "Paper Reproduction",
+    toc5d: "Get code, reproduce results, verify",
+    toc6: "Paper Writing",
+    toc6d: "Draft, fill data, pre-submission check",
+    toc7: "Quick Reference",
+    toc7d: "One-liner + 3-step workflow overview",
+    introTitle: "🤖 What is OpenCode?",
+    introSub: "OpenCode is an open-source AI programming and task automation assistant that interacts with AI models through natural language for coding, documentation, research, and more.",
+    introF1: "100% Open Source",
+    introF2: "Multi-Model",
+    introF3: "Skill Plugin System",
+    introF3d: "Reusable instruction sets, on-demand",
+    introF4: "Sub-Agent Parallel",
+    introF4d: "Plan/Build/@general分工",
+    dockerTitle: "🐳 Why Docker Edition?",
+    dockerC1: "Out of the Box",
+    dockerC1d: "All skills and runtimes pre-installed (TeX Live, LibreOffice, Chrome, Typst, etc.). No manual setup needed.",
+    dockerC2: "Consistent Environment",
+    dockerC2d: "Same image across dev, test, and production — no environment drift.",
+    dockerC3: "Secure Isolation",
+    dockerC3d: "Containerized and permission-controlled.",
+    qsTitle: "⚡ Quick Start",
+    qsSub: "Three ways — pick the one that fits",
+    qsA: "One-Click Script ",
+    recommended: "Recommended",
+    qsAsub: "For Linux / macOS / WSL",
+    qsA1: "✅ Auto network detection",
+    qsA2: "✅ Interactive setup",
+    qsA3: "✅ Auto port conflict resolution",
+    qsA4: "✅ Upgrade existing containers",
+    qsB: "Docker Compose",
+    qsB1: "✅ Custom env variables",
+    qsB2: "✅ .env config management",
+    qsC: "Manual Docker",
+    qsC1: "✅ Most flexible",
+    qsC2: "✅ CI/CD ready",
+    qsFooter: 'Open <strong>http://127.0.0.1:4096</strong> in your browser',
+    skillTitle: "📋 Pre-installed Skills",
+    skillSub: "Three skill collections cover the full workflow",
+    skillDocs: "Document Skills",
+    skillDocsSub: "Create, edit, and convert Office documents",
+    skillSearch: "Search & Browse",
+    skillSearchSub: "Web search and content fetching, no extra API Key needed",
+    skillBuiltinText: "websearch · webfetch (Built-in)",
+    noInstall: "Built-in",
+    skillAcademic: "academic-writing",
+    skillAcademicSub: "Academic writing, review checks, cover letter generation",
+    skillFooter: "One AI conversation — from research to output",
+    s1Title: "🔍 Step 1: Literature Search & Idea Mining",
+    s1s1: "Search with websearch",
+    s1s1d: "Search arXiv / Google Scholar for latest papers — titles, abstracts, authors",
+    s1s2: "AI Analysis & Filtering",
+    s1s2d: "Auto-filter high-value papers, extract key ideas",
+    s1s3: "Save Citations to BibTeX",
+    s1s3d: "Export references to references.bib for later use",
+    tellAI: "🗣️ Tell AI",
+    s1prompt: '"Search 10 latest papers about AI agent from arXiv using websearch. Compile a survey report (html and ppt format, use_skill pptx), pick the most valuable ideas, and save citations to a bib file."',
+    s1o1: "Survey Report.pptx",
+    s1o2: "Idea Picks",
+    s2Title: "🧪 Step 2: Paper Reproduction",
+    s2s1: "Get Code & Data",
+    s2s1d: "Use agent-browser to download official code and datasets",
+    s2s2: "Reproduce in Container",
+    s2s2d: "Python / Node.js / TeX Live pre-installed — auto-configure and run experiments",
+    s2s3: "Generate Verification Report",
+    s2s3d: "Document reproduction process and results with docx/pdf Skill",
+    s2prompt: '"Find the high-value papers from Step 1, download their official code and datasets, reproduce core experiments in the container, and verify results. Generate a reproduction report (docx and pdf format, use_skill docx pdf)."',
+    s2o1: "Reproduction Report.docx",
+    s2o2: "Code & Data Archive",
+    s2o3: "Key Experiment Charts",
+    s3Title: "✍️ Step 3: Paper Writing & Submission",
+    s3s1: "Preparation",
+    s3s1d: "Use references.bib and reproduction report from Step 1 & 2 as background",
+    s3s2: "AI Draft Generation",
+    s3s2d: "academic-writing auto-selects LaTeX / Typst template: title, abstract, intro, methods, experiments — with citations inserted",
+    s3s3: "Fill in Core Data",
+    s3s3d: "AI pauses after the framework — you provide tables and figures, AI formats them",
+    s3s4: "Pre-Submission Check",
+    s3s4d: "paper-audit reviews completeness, cover-letter generates submission letter — ready to submit",
+    s3prompt: '"Integrate the reproduced baseline from Step 2, build a paper framework from the most valuable ideas (tex format compiled to pdf, use_skill latex-paper-en bib-search-citation)."',
+    s3o1: "Paper Draft.tex/.typ",
+    s3o2: "paper-audit Report",
+    refTitle: "📎 Quick Reference",
+    refOpen: 'Open <strong>http://127.0.0.1:4096</strong> in your browser',
+    refStep1: "Step 1 Literature Search",
+    refStep2: "Step 2 Paper Reproduction",
+    refStep3: "Step 3 Paper Writing",
+    refFlow: "Search → Reproduce → Write → Submit",
+    refC1: "Step 1",
+    refC1d: "Literature Search → references.bib",
+    refC2: "Step 2",
+    refC2d: "Reproduction → Verification Report",
+    refC3: "Step 3",
+    refC3d: "Paper Writing → Ready to Submit",
+    licenseTitle: "📄 License & Resources",
+    licenseH: "GNU General Public License v3.0",
+    licenseP: "This project is licensed under GPLv3. Third-party tools packaged in the image (TeX Live, Chrome, LibreOffice, etc.) follow their own licenses.",
+    linksH: "Related Links",
+    link1: "GitHub Repository",
+    link2: "OpenCode Official Docs",
+    link3: "OpenCode Source Code",
+    scriptCmd: 'bash &lt;(curl -fsSL<br>&nbsp;&nbsp;raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/<br>&nbsp;&nbsp;opencode-academic-enhanced/<br>&nbsp;&nbsp;main/start.sh)',
+    scriptRef: 'bash &lt;(curl -fsSL https://raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.sh)',
+    langToggle: "中文",
+  }
+};
+
+let currentLang = 'zh';
+let currentSlide = 1;
+const totalSlides = 10;
+
+function setLanguage(lang) {
+  currentLang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[lang][key] !== undefined) {
+      el.innerHTML = i18n[lang][key];
+    }
+  });
+  document.getElementById('langBtn').textContent = i18n[lang].langToggle;
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+}
+
+function toggleLanguage() {
+  const nextLang = currentLang === 'zh' ? 'en' : 'zh';
+  setLanguage(nextLang);
+}
+
+function showSlide(n) {
+  document.querySelectorAll('.slide').forEach(s => s.style.display = 'none');
+  document.getElementById('slide' + n).style.display = 'flex';
+  currentSlide = n;
+}
+
+function nextSlide() {
+  if (currentSlide < totalSlides) showSlide(currentSlide + 1);
+}
+
+function prevSlide() {
+  if (currentSlide > 1) showSlide(currentSlide - 1);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextSlide(); }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevSlide(); }
+});
+
+// Auto-detect language from browser
+const lang = navigator.language || navigator.userLanguage;
+setLanguage(lang.startsWith('zh') ? 'zh' : 'en');
+showSlide(1);
+</script>
+</body>
+</html>

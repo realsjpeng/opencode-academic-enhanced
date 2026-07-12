@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Copyright (C) 2026 realsjpeng
+# This program is free software under the GPLv3.
+services:
+  opencode:
+    image: ghcr.io/realsjpeng/opencode-academic-enhanced:latest
+    container_name: opencode-academic
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4096}:4096"
+    volumes:
+      - "${DATA_DIR:-./data}:/home/user/.local/share/opencode"
+      - "${WORKSPACE:-.}:/workspace"
