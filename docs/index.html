@@ -415,7 +415,7 @@
     <div class="card" style="text-align:center">
       <div class="big-icon" style="font-size:2rem; color:var(--primary); font-weight:800">A</div>
       <h3 data-i18n="qsA">一键脚本 <span class="badge" data-i18n="recommended">推荐</span></h3>
-      <p style="font-size:0.85rem; margin:0.5rem 0" data-i18n="qsAsub">适用于 Linux / macOS / WSL</p>
+      <p style="font-size:0.85rem; margin:0.5rem 0" data-i18n="qsAsub">适用于 Linux / macOS / Windows</p>
       <div class="code-block" style="font-size:0.72rem; text-align:left" data-i18n="scriptCmd"></div>
       <div style="margin-top:0.8rem; font-size:0.8rem; color:var(--text-secondary)">
         <span data-i18n="qsA1">✅ 自动检测网络</span><br>
@@ -743,7 +743,7 @@ const i18n = {
     qsSub: "三种方式，选择最适合你的",
     qsA: "一键脚本 ",
     recommended: "推荐",
-    qsAsub: "适用于 Linux / macOS / WSL",
+    qsAsub: "适用于 Linux / macOS / Windows",
     qsA1: "✅ 自动检测网络",
     qsA2: "✅ 交互式配置",
     qsA3: "✅ 端口冲突自递增",
@@ -819,8 +819,8 @@ const i18n = {
     link1: "GitHub 仓库",
     link2: "OpenCode 官方文档",
     link3: "OpenCode 源码",
-    scriptCmd: 'bash &lt;(curl -fsSL<br>&nbsp;&nbsp;ghfast.top/raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/<br>&nbsp;&nbsp;opencode-academic-enhanced/<br>&nbsp;&nbsp;main/start.sh)',
-    scriptRef: 'bash &lt;(curl -fsSL https://ghfast.top/raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.sh)',
+    scriptCmd: '# Linux / macOS<br>bash &lt;(curl -fsSL<br>&nbsp;&nbsp;https://ghfast.top/https://raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.sh)<br><br># Windows (PowerShell)<br>powershell -c "iex ((Invoke-WebRequest<br>&nbsp;&nbsp;-Uri https://ghfast.top/https://raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.ps1).Content)"',
+    scriptRef: '# Linux / macOS<br>bash &lt;(curl -fsSL<br>&nbsp;&nbsp;https://ghfast.top/https://raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.sh)<br><br># Windows (PowerShell)<br>powershell -c "iex ((Invoke-WebRequest<br>&nbsp;&nbsp;-Uri https://ghfast.top/https://raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.ps1).Content)"',
     langToggle: "English",
   },
   en: {
@@ -863,7 +863,7 @@ const i18n = {
     qsSub: "Three ways — pick the one that fits",
     qsA: "One-Click Script ",
     recommended: "Recommended",
-    qsAsub: "For Linux / macOS / WSL",
+    qsAsub: "For Linux / macOS / Windows",
     qsA1: "✅ Auto network detection",
     qsA2: "✅ Interactive setup",
     qsA3: "✅ Auto port conflict resolution",
@@ -939,8 +939,8 @@ const i18n = {
     link1: "GitHub Repository",
     link2: "OpenCode Official Docs",
     link3: "OpenCode Source Code",
-    scriptCmd: 'bash &lt;(curl -fsSL<br>&nbsp;&nbsp;raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/<br>&nbsp;&nbsp;opencode-academic-enhanced/<br>&nbsp;&nbsp;main/start.sh)',
-    scriptRef: 'bash &lt;(curl -fsSL https://raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.sh)',
+    scriptCmd: '# Linux / macOS<br>bash &lt;(curl -fsSL<br>&nbsp;&nbsp;https://raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.sh)<br><br># Windows (PowerShell)<br>powershell -c "iex ((Invoke-WebRequest<br>&nbsp;&nbsp;-Uri https://raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.ps1).Content)"',
+    scriptRef: '# Linux / macOS<br>bash &lt;(curl -fsSL<br>&nbsp;&nbsp;https://raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.sh)<br><br># Windows (PowerShell)<br>powershell -c "iex ((Invoke-WebRequest<br>&nbsp;&nbsp;-Uri https://raw.githubusercontent.com/<br>&nbsp;&nbsp;realsjpeng/opencode-academic-enhanced/main/start.ps1).Content)"',
     langToggle: "中文",
   }
 };

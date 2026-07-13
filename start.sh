@@ -20,6 +20,91 @@ echo -e "${BLUE}========================================================${NC}"
 echo -e "${BLUE}  $(_ "OpenCode Academic Enhanced - One-Click Launcher" "OpenCode Academic Enhanced - 一键启动")${NC}"
 echo -e "${BLUE}========================================================${NC}"
 
+# --- Uninstall option ---
+echo ""
+  echo -e "  ${YELLOW}[U] $(_ "Uninstall all components" "卸载全部组件")${NC}"
+echo -e "  ${GREEN}[Enter]$(_ " to continue setup" "继续安装")${NC}"
+read -p "$(_ "Choose" "请选择") (U/Enter): " UNINSTALL_CHOICE
+if [[ "$UNINSTALL_CHOICE" =~ ^[Uu]$ ]]; then
+  echo -e "\n${RED}$(_ "=== Uninstalling OpenCode Academic Enhanced ===" "=== 卸载 OpenCode Academic Enhanced ===")${NC}"
+
+  # 1. Stop & remove container
+  if docker inspect opencode-academic &>/dev/null 2>&1; then
+    echo -e "${YELLOW}$(_ "Stopping and removing container..." "停止并删除容器...")${NC}"
+    docker rm -f opencode-academic 2>/dev/null || true
+    echo -e "  ${GREEN}✔$(_ " Container removed" " 容器已删除")${NC}"
+  else
+    echo -e "  ${CYAN}-$(_ " Container not found" " 容器不存在")${NC}"
+  fi
+
+  # 2. Remove Docker image
+  if docker images ghcr.io/realsjpeng/opencode-academic-enhanced --format "{{.Repository}}:{{.Tag}}" 2>/dev/null | grep -q .; then
+    echo -e "${YELLOW}$(_ "Removing Docker image..." "删除 Docker 镜像...")${NC}"
+    docker images ghcr.io/realsjpeng/opencode-academic-enhanced --format "{{.Repository}}:{{.Tag}}" 2>/dev/null \
+      | xargs -r docker rmi -f 2>/dev/null || true
+    echo -e "  ${GREEN}✔$(_ " Image removed" " 镜像已删除")${NC}"
+  else
+    echo -e "  ${CYAN}-$(_ " Image not found" " 镜像不存在")${NC}"
+  fi
+
+  # 3. Remove OpenCode Desktop
+  case "$(uname -s)" in
+    Linux*)
+      if command -v opencode-desktop &>/dev/null || [ -f ~/opencode-desktop.AppImage ]; then
+        echo -e "${YELLOW}$(_ "Removing OpenCode Desktop..." "移除 OpenCode Desktop...")${NC}"
+        if command -v dpkg &>/dev/null && dpkg -l opencode-desktop &>/dev/null 2>&1; then
+          sudo dpkg -r opencode-desktop 2>/dev/null || true
+        fi
+        rm -f ~/opencode-desktop.AppImage 2>/dev/null || true
+        echo -e "  ${GREEN}✔$(_ " OpenCode Desktop removed" " OpenCode Desktop 已移除")${NC}"
+      fi
+      ;;
+    Darwin*)
+      if [ -d /Applications/OpenCode.app ]; then
+        echo -e "${YELLOW}$(_ "Removing OpenCode Desktop..." "移除 OpenCode Desktop...")${NC}"
+        rm -rf /Applications/OpenCode.app 2>/dev/null || true
+        echo -e "  ${GREEN}✔$(_ " OpenCode Desktop removed" " OpenCode Desktop 已移除")${NC}"
+      fi
+      ;;
+    *)
+      echo -e "  ${CYAN}-$(_ " Skipping Desktop removal on this OS" " 跳过 Desktop 卸载")${NC}"
+      ;;
+  esac
+
+  # 4. Docker Desktop (optional)
+  echo ""
+  echo -e "${YELLOW}$(_ "Remove Docker Desktop as well?" "是否同时卸载 Docker Desktop？") (y/N)${NC}"
+  read -r REMOVE_DOCKER
+  if [[ "$REMOVE_DOCKER" =~ ^[Yy]$ ]]; then
+    case "$(uname -s)" in
+      Linux*)
+        if command -v docker &>/dev/null; then
+          sudo apt-get remove -y docker-desktop docker-ce docker-ce-cli containerd.io 2>/dev/null || true
+          sudo rm -f /usr/local/bin/docker 2>/dev/null || true
+        fi
+        ;;
+      Darwin*)
+        if [ -d /Applications/Docker.app ]; then
+          rm -rf /Applications/Docker.app 2>/dev/null || true
+        fi
+        ;;
+    esac
+    echo -e "  ${GREEN}✔$(_ " Docker Desktop removed" " Docker Desktop 已卸载")${NC}"
+  fi
+
+  # 5. Data directories (optional)
+  echo ""
+  echo -e "${YELLOW}$(_ "Remove data/config directories (chat history, API keys)?" "是否删除数据/配置目录（聊天记录、API Key）？") (y/N)${NC}"
+  read -r REMOVE_DATA
+  if [[ "$REMOVE_DATA" =~ ^[Yy]$ ]]; then
+    rm -rf ./opencode-data 2>/dev/null || true
+    echo -e "  ${GREEN}✔$(_ " Data directories removed" " 数据目录已删除")${NC}"
+  fi
+
+  echo -e "\n${GREEN}$(_ "Uninstall complete!" "卸载完成！")${NC}"
+  exit 0
+fi
+
 # --- Docker check ---
 if ! command -v docker &> /dev/null; then
   echo -e "${YELLOW}$(_ "Docker is not installed. Install now?" "Docker 未安装，是否自动安装？") (Y/N)${NC}"
@@ -53,15 +138,54 @@ if ! command -v docker &> /dev/null; then
   fi
 fi
 
-# --- Network detection ---
-echo -e "\n${YELLOW}$(_ "Detecting network..." "检测网络环境...")${NC}"
-if curl -s -o /dev/null --connect-timeout 3 https://www.google.com; then
-  echo -e "${GREEN}$(_ "Direct access available" "外网正常，使用直连")${NC}"
-  IMAGE="ghcr.io/realsjpeng/opencode-academic-enhanced:latest"
-else
-  echo -e "${YELLOW}$(_ "Restricted network detected, using proxy" "检测到网络限制，使用代理镜像拉取")${NC}"
-  IMAGE="ghcr.nju.edu.cn/realsjpeng/opencode-academic-enhanced:latest"
+# --- Multi-mirror speed test ---
+# Test all available mirrors, rank by response time, then use the fastest.
+# If docker pull fails on the chosen mirror, fall back to the next one.
+#
+# Known GHCR mirrors (2026-07):
+#   ghcr.nju.edu.cn     - 南京大学 (HTTP 200, confirmed working)
+#   ghcr.registry.cyou  - registry.cyou (HTTP 200, confirmed working)
+#   ghcr.1ms.run        - 毫秒镜像 (HTTP 401, standard Docker auth flow)
+#   ghcr.chenby.cn      - ChenBy proxy (HTTP 401, standard Docker auth flow)
+#   ghcr.m.daocloud.io  - DaoCloud (HTTP 401, standard Docker auth flow)
+echo -e "\n${YELLOW}$(_ "Testing mirror speeds..." "测试镜像速度...")${NC}"
+MIRROR_LIST=(
+  "ghcr.io"
+  "ghcr.nju.edu.cn"
+  "ghcr.registry.cyou"
+  "ghcr.1ms.run"
+  "ghcr.chenby.cn"
+  "ghcr.m.daocloud.io"
+)
+declare -A MIRROR_TIMES
+for NAME in "${MIRROR_LIST[@]}"; do
+  TIME=$(curl -s -o /dev/null --connect-timeout 5 --max-time 10 \
+    -w "%{time_connect}" "https://$NAME/v2/" 2>/dev/null || echo "999")
+  TIME_MS=$(echo "$TIME * 1000 / 1" | bc 2>/dev/null || echo "$TIME" | awk '{printf "%.0f", $1*1000}' 2>/dev/null || echo "99999")
+  if [ "$TIME_MS" -lt 90000 ] 2>/dev/null; then
+    echo -e "  ${GREEN}$NAME${NC}: ${TIME_MS}ms"
+    MIRROR_TIMES[$NAME]=$TIME_MS
+  else
+    echo -e "  ${RED}$NAME${NC}: unreachable"
+  fi
+done
+if [ ${#MIRROR_TIMES[@]} -eq 0 ]; then
+  echo -e "${RED}$(_ "All mirrors unreachable. Check your network." "所有镜像都无法访问，请检查网络。")${NC}"
+  exit 1
 fi
+# Sort mirrors by time (fastest first)
+SORTED_MIRRORS=()
+for NAME in "${MIRROR_LIST[@]}"; do
+  if [ -n "${MIRROR_TIMES[$NAME]}" ]; then
+    SORTED_MIRRORS+=("$NAME:${MIRROR_TIMES[$NAME]}")
+  fi
+done
+SORTED_MIRRORS=($(printf '%s\n' "${SORTED_MIRRORS[@]}" | sort -t: -k2 -n))
+echo -e "${GREEN}$(_ "Mirror ranking" "镜像排名")${NC}:"
+for i in "${!SORTED_MIRRORS[@]}"; do
+  NAME="${SORTED_MIRRORS[$i]%%:*}"
+  echo -e "  $((i+1)). $NAME (${MIRROR_TIMES[$NAME]}ms)"
+done
 
 # --- Existing container check (upgrade or reinstall) ---
 if docker inspect opencode-academic &>/dev/null; then
@@ -88,7 +212,20 @@ if docker inspect opencode-academic &>/dev/null; then
       fi
       mkdir -p "$DATA_DIR_FULL" "$WORKSPACE_FULL" 2>/dev/null || true
       echo -e "\n${YELLOW}$(_ "Pulling latest image..." "拉取最新镜像...")${NC}"
-      docker pull "$IMAGE"
+      PULL_OK=0
+      for MIRROR_ENTRY in "${SORTED_MIRRORS[@]}"; do
+        MIRROR="${MIRROR_ENTRY%%:*}"
+        IMAGE="$MIRROR/realsjpeng/opencode-academic-enhanced:latest"
+        echo -e "  ${YELLOW}$(_ "Trying mirror" "尝试镜像")${NC}: $IMAGE"
+        if docker pull "$IMAGE"; then
+          PULL_OK=1
+          break
+        fi
+      done
+      if [ "$PULL_OK" -eq 0 ]; then
+        echo -e "${RED}$(_ "All mirrors failed. Check your network." "所有镜像都拉取失败，请检查网络。")${NC}"
+        exit 1
+      fi
       echo -e "\n${GREEN}$(_ "Upgrading container..." "升级容器...")${NC}"
       docker rm -f opencode-academic 2>/dev/null || true
       docker run -d --name opencode-academic \
@@ -144,15 +281,27 @@ fi
 # --- Preview ---
 echo ""
 echo -e "${YELLOW}$(_ "Configuration preview:" "配置预览:")${NC}"
-echo -e "   $(_ "Image" "镜像"):      ${CYAN}${IMAGE}${NC}"
 echo -e "   $(_ "Port" "端口"):       ${CYAN}${PORT}${NC}"
 echo -e "   $(_ "Data dir" "数据目录"): ${CYAN}${DATA_DIR_FULL}${NC}"
 echo -e "   $(_ "Workspace" "工作目录"): ${CYAN}${WORKSPACE_FULL}${NC}"
 
-# --- Pull ---
-echo ""
-echo -e "${YELLOW}$(_ "Pulling image..." "拉取镜像中...")${NC}"
-docker pull "$IMAGE"
+# --- Pull with mirror fallback ---
+PULL_OK=0
+for MIRROR_ENTRY in "${SORTED_MIRRORS[@]}"; do
+  MIRROR="${MIRROR_ENTRY%%:*}"
+  IMAGE="$MIRROR/realsjpeng/opencode-academic-enhanced:latest"
+  echo ""
+  echo -e "${YELLOW}$(_ "Trying mirror" "尝试镜像")${NC}: $IMAGE"
+  if docker pull "$IMAGE"; then
+    PULL_OK=1
+    break
+  fi
+  echo -e "${YELLOW}$(_ "Mirror failed, trying next..." "镜像失败，尝试下一个...")${NC}"
+done
+if [ "$PULL_OK" -eq 0 ]; then
+  echo -e "${RED}$(_ "All mirrors failed. Check your network." "所有镜像都拉取失败，请检查网络。")${NC}"
+  exit 1
+fi
 
 # --- Run ---
 echo -e "\n${GREEN}$(_ "Starting container..." "启动容器...")${NC}"

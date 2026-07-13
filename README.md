@@ -38,7 +38,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/realsjpeng/opencode-academic
 powershell -c "iex ((Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/realsjpeng/opencode-academic-enhanced/main/start.ps1').Content)"
 ```
 
-> **In mainland China?** If `raw.githubusercontent.com` is inaccessible, use a proxy:
+> **Script not downloading?** If `raw.githubusercontent.com` is inaccessible, use a proxy:
 > ```bash
 > bash <(curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/realsjpeng/opencode-academic-enhanced/main/start.sh)
 > ```

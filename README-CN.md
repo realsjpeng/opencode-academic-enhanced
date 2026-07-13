@@ -38,7 +38,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/realsjpeng/opencode-academic
 powershell -c "iex ((Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/realsjpeng/opencode-academic-enhanced/main/start.ps1').Content)"
 ```
 
-> **如果 `raw.githubusercontent.com` 无法访问**，用 `ghfast.top` 代理即可：
+> **脚本拉不下来？** 如果 `raw.githubusercontent.com` 无法访问，用 `ghfast.top` 代理即可：
 > ```bash
 > bash <(curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/realsjpeng/opencode-academic-enhanced/main/start.sh)
 > ```
