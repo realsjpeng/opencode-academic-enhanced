@@ -217,10 +217,15 @@ if docker inspect opencode-academic &>/dev/null; then
         MIRROR="${MIRROR_ENTRY%%:*}"
         IMAGE="$MIRROR/realsjpeng/opencode-academic-enhanced:latest"
         echo -e "  ${YELLOW}$(_ "Trying mirror" "尝试镜像")${NC}: $IMAGE"
-        if docker pull "$IMAGE"; then
-          PULL_OK=1
-          break
-        fi
+        RETRIES=0
+        while [ $RETRIES -le 2 ]; do
+          [ $RETRIES -gt 0 ] && echo -e "  ${YELLOW}$(_ "Retrying" "重试") (${RETRIES}/2)...${NC}" && docker system prune -f --all --filter "label=org.opencontainers.image.source=ghcr.io" 2>/dev/null || true
+          if timeout 3600 docker pull "$IMAGE"; then
+            PULL_OK=1
+            break 2
+          fi
+          RETRIES=$((RETRIES + 1))
+        done
       done
       if [ "$PULL_OK" -eq 0 ]; then
         echo -e "${RED}$(_ "All mirrors failed. Check your network." "所有镜像都拉取失败，请检查网络。")${NC}"
@@ -278,6 +283,81 @@ if [ "$PORT" -gt 65535 ]; then
   exit 1
 fi
 
+# --- Docker daemon tuning ---
+# Large layers may stall over mirrors. Offer to reduce concurrency.
+echo ""
+echo -e "${YELLOW}$(_ "Large images may stall on mirrors. Limit concurrent downloads to 1 layer?" "大镜像通过中转站可能断流，是否限制单层下载（更稳定）？") (y/N)${NC}"
+read -r LIMIT_CONCURRENT
+if [[ "$LIMIT_CONCURRENT" =~ ^[Yy]$ ]]; then
+  DAEMON_PATH=""
+  if [ -f /etc/docker/daemon.json ]; then
+    DAEMON_PATH="/etc/docker/daemon.json"
+  elif [ -f "$HOME/.docker/daemon.json" ]; then
+    DAEMON_PATH="$HOME/.docker/daemon.json"
+  else
+    # Try to create system-level config (most reliable)
+    if [ -d /etc/docker ] && [ -w /etc/docker ] 2>/dev/null; then
+      DAEMON_PATH="/etc/docker/daemon.json"
+    elif command -v sudo &>/dev/null; then
+      echo -e "  ${YELLOW}$(_ "Need sudo to create /etc/docker/daemon.json" "需要 sudo 权限创建 /etc/docker/daemon.json")${NC}"
+      if sudo sh -c 'mkdir -p /etc/docker && echo "{}" > /etc/docker/daemon.json' 2>/dev/null; then
+        DAEMON_PATH="/etc/docker/daemon.json"
+      fi
+    fi
+  fi
+  if [ -n "$DAEMON_PATH" ]; then
+    # Merge max-concurrent-downloads into existing config
+    TMP_CONFIG=$(mktemp)
+    if command -v python3 &>/dev/null; then
+      python3 -c "
+import json
+try:
+    with open('$DAEMON_PATH') as f:
+        cfg = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    cfg = {}
+cfg['max-concurrent-downloads'] = 1
+with open('$TMP_CONFIG', 'w') as f:
+    json.dump(cfg, f, indent=2)
+"
+      if [ -f "$DAEMON_PATH" ]; then
+        sudo cp "$TMP_CONFIG" "$DAEMON_PATH" 2>/dev/null || cp "$TMP_CONFIG" "$DAEMON_PATH" 2>/dev/null
+      else
+        sudo cp "$TMP_CONFIG" "$DAEMON_PATH" 2>/dev/null || cp "$TMP_CONFIG" "$DAEMON_PATH" 2>/dev/null
+      fi
+      rm -f "$TMP_CONFIG"
+      echo -e "  ${GREEN}✔$(_ " Set max-concurrent-downloads=1" " 已配置单层下载")${NC}"
+      echo -e "${YELLOW}$(_ "Restarting Docker to apply..." "正在重启 Docker 使配置生效...")${NC}"
+      case "$(uname -s)" in
+        Linux*)
+          if command -v systemctl &>/dev/null; then
+            sudo systemctl restart docker 2>/dev/null || true
+          fi
+          ;;
+        Darwin*)
+          osascript -e 'quit app "Docker"' 2>/dev/null || true
+          sleep 2
+          open -a Docker 2>/dev/null || true
+          ;;
+      esac
+      echo -e "${YELLOW}$(_ "Waiting for Docker to be ready..." "等待 Docker 启动...")${NC}"
+      for i in $(seq 1 30); do
+        if docker info &>/dev/null; then
+          echo -e "  ${GREEN}✔$(_ " Docker is ready" " Docker 已就绪")${NC}"
+          break
+        fi
+        sleep 2
+      done
+    else
+      echo -e "  ${RED}$(_ "Python3 required to modify daemon.json. Skipping." "需要 Python3 来修改配置，已跳过。")${NC}"
+    fi
+  else
+    echo -e "  ${YELLOW}$(_ "Cannot write to daemon.json. Set it manually:" "无法写入 daemon.json，请手动配置：")${NC}"
+    echo -e "  ${CYAN}{\"max-concurrent-downloads\": 1}${NC}"
+    echo -e "  ${CYAN}$(_ "Add to /etc/docker/daemon.json and restart Docker" "添加到 /etc/docker/daemon.json 后重启 Docker")${NC}"
+  fi
+fi
+
 # --- Preview ---
 echo ""
 echo -e "${YELLOW}$(_ "Configuration preview:" "配置预览:")${NC}"
@@ -285,17 +365,30 @@ echo -e "   $(_ "Port" "端口"):       ${CYAN}${PORT}${NC}"
 echo -e "   $(_ "Data dir" "数据目录"): ${CYAN}${DATA_DIR_FULL}${NC}"
 echo -e "   $(_ "Workspace" "工作目录"): ${CYAN}${WORKSPACE_FULL}${NC}"
 
-# --- Pull with mirror fallback ---
+# --- Pull with mirror fallback + retry ---
+# Large layers may stall on community mirrors. We retry with timeout
+# and fall back to the next mirror on failure.
 PULL_OK=0
 for MIRROR_ENTRY in "${SORTED_MIRRORS[@]}"; do
   MIRROR="${MIRROR_ENTRY%%:*}"
   IMAGE="$MIRROR/realsjpeng/opencode-academic-enhanced:latest"
   echo ""
   echo -e "${YELLOW}$(_ "Trying mirror" "尝试镜像")${NC}: $IMAGE"
-  if docker pull "$IMAGE"; then
-    PULL_OK=1
-    break
-  fi
+  RETRIES=0
+  MAX_RETRIES=2
+  while [ $RETRIES -le $MAX_RETRIES ]; do
+    if [ $RETRIES -gt 0 ]; then
+      echo -e "  ${YELLOW}$(_ "Retrying" "重试") (${RETRIES}/${MAX_RETRIES})...${NC}"
+      # Clean partial layers before retry
+      docker system prune -f --all --filter "label=org.opencontainers.image.source=ghcr.io" 2>/dev/null || true
+    fi
+    # Use timeout to detect stalls (3600s = 1h for large images)
+    if timeout 3600 docker pull "$IMAGE"; then
+      PULL_OK=1
+      break 2
+    fi
+    RETRIES=$((RETRIES + 1))
+  done
   echo -e "${YELLOW}$(_ "Mirror failed, trying next..." "镜像失败，尝试下一个...")${NC}"
 done
 if [ "$PULL_OK" -eq 0 ]; then

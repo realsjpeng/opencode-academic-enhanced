@@ -192,13 +192,24 @@ if ($existingContainer) {
       foreach ($name in $sortedMirrors) {
         $img = "$name/realsjpeng/opencode-academic-enhanced:latest"
         Write-Color $Yellow "$(T 'Trying mirror' '尝试镜像'): $img"
-        docker pull $img
-        if ($LASTEXITCODE -eq 0) {
-          $global:Image = $img
-          $pullOk = $true
-          break
+        for ($retry = 0; $retry -le 2; $retry++) {
+          if ($retry -gt 0) {
+            Write-Color $Yellow "$(T 'Retrying' '重试') ($retry/2)..."
+            docker system prune -f --all --filter "label=org.opencontainers.image.source=ghcr.io" 2>$null | Out-Null
+          }
+          $job = Start-Job -ScriptBlock { param($i) docker pull $i } -ArgumentList $img
+          if (Wait-Job $job -Timeout 3600) {
+            Receive-Job $job | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+              $global:Image = $img
+              $pullOk = $true
+              break
+            }
+          } else {
+            Stop-Job $job; Remove-Job $job -Force
+          }
         }
-        Write-Color $Yellow "$(T 'Mirror failed, trying next...' '镜像失败，尝试下一个...')"
+        if ($pullOk) { break }
       }
       if (-not $pullOk) {
         Write-Color $Red "$(T 'All mirrors failed. Check your network.' '所有镜像都拉取失败，请检查网络。')"
@@ -249,6 +260,56 @@ if ($Port -gt 65535) {
   exit 1
 }
 
+# --- Docker daemon tuning ---
+Write-Host ""
+Write-Color $Yellow "$(T 'Large images may stall on mirrors. Limit concurrent downloads to 1 layer?' '大镜像通过中转站可能断流，是否限制单层下载（更稳定）？') (y/N)"
+$limitConcurrent = Read-Host
+if ($limitConcurrent -match '^[Yy]') {
+  $daemonPaths = @("$env:USERPROFILE\.docker\daemon.json")
+  # Docker Desktop for Windows: daemon.json location
+  $daemonPath = $null
+  foreach ($p in $daemonPaths) {
+    if (Test-Path $p) { $daemonPath = $p; break }
+  }
+  if (-not $daemonPath) {
+    $daemonDir = "$env:USERPROFILE\.docker"
+    New-Item -ItemType Directory -Force -Path $daemonDir | Out-Null
+    $daemonPath = "$daemonDir\daemon.json"
+  }
+  try {
+    $cfg = @{}
+    if (Test-Path $daemonPath) {
+      $cfg = Get-Content $daemonPath -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json -ErrorAction SilentlyContinue
+      if (-not $cfg) { $cfg = @{} }
+    }
+    $cfg | Add-Member -NotePropertyName "max-concurrent-downloads" -NotePropertyValue 1 -Force
+    $cfg | ConvertTo-Json -Depth 10 | Set-Content $daemonPath -Encoding UTF8
+    Write-Color $Green "  ✔ $(T 'Set max-concurrent-downloads=1' '已配置单层下载')"
+    Write-Color $Yellow "$(T 'Restarting Docker to apply...' '正在重启 Docker 使配置生效...')"
+    # Stop Docker Desktop
+    Get-Process "Docker Desktop" -ErrorAction SilentlyContinue | Stop-Process -Force 2>$null
+    Start-Sleep 2
+    # Start Docker Desktop
+    $dockerPaths = @(
+      "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe",
+      "$env:LOCALAPPDATA\Programs\Docker\Docker\Docker Desktop.exe"
+    )
+    $dockerExe = $null
+    foreach ($p in $dockerPaths) { if (Test-Path $p) { $dockerExe = $p; break } }
+    if ($dockerExe) { Start-Process $dockerExe }
+    Write-Color $Yellow "$(T 'Waiting for Docker to be ready...' '等待 Docker 启动...')"
+    for ($i = 0; $i -lt 60; $i++) {
+      $null = docker info 2>$null
+      if ($LASTEXITCODE -eq 0) { Write-Color $Green "  ✔ $(T 'Docker is ready' 'Docker 已就绪')"; break }
+      Start-Sleep 2
+    }
+  } catch {
+    Write-Color $Red "$(T 'Failed to write daemon.json. Set it manually:' '无法写入 daemon.json，请手动配置：')"
+    Write-Color $Cyan '{"max-concurrent-downloads": 1}'
+    Write-Color $Cyan "$(T 'Add to daemon.json and restart Docker' '添加到 daemon.json 后重启 Docker')"
+  }
+}
+
 # --- Preview ---
 Write-Host ""
 Write-Color $Yellow "$(T 'Configuration preview:' '配置预览:')"
@@ -257,18 +318,34 @@ Write-Color $Cyan  "   $(T 'Port' '端口'):       $Port"
 Write-Color $Cyan  "   $(T 'Data dir' '数据目录'): $DataDirFull"
 Write-Color $Cyan  "   $(T 'Workspace' '工作目录'): $WorkspaceFull"
 
-# --- Pull with mirror fallback ---
+# --- Pull with mirror fallback + retry ---
 Write-Host ""
 $pullOk = $false
 foreach ($name in $sortedMirrors) {
   $img = "$name/realsjpeng/opencode-academic-enhanced:latest"
   Write-Color $Yellow "$(T 'Trying mirror' '尝试镜像'): $img"
-  docker pull $img
-  if ($LASTEXITCODE -eq 0) {
-    $global:Image = $img
-    $pullOk = $true
-    break
+  for ($retry = 0; $retry -le 2; $retry++) {
+    if ($retry -gt 0) {
+      Write-Color $Yellow "$(T 'Retrying' '重试') ($retry/2)..."
+      # Clean partial layers
+      docker system prune -f --all --filter "label=org.opencontainers.image.source=ghcr.io" 2>$null | Out-Null
+    }
+    # Use a job to enforce timeout (3600s for large images)
+    $job = Start-Job -ScriptBlock { param($i) docker pull $i } -ArgumentList $img
+    if (Wait-Job $job -Timeout 3600) {
+      Receive-Job $job | Out-Null
+      if ($job.State -eq 'Completed' -and $LASTEXITCODE -eq 0) {
+        $global:Image = $img
+        $pullOk = $true
+        break
+      }
+    } else {
+      Stop-Job $job
+      Remove-Job $job -Force
+      Write-Color $Yellow "$(T 'Timeout, retrying...' '超时，重试中...')"
+    }
   }
+  if ($pullOk) { break }
   Write-Color $Yellow "$(T 'Mirror failed, trying next...' '镜像失败，尝试下一个...')"
 }
 if (-not $pullOk) {
