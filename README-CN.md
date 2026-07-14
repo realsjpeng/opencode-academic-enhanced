@@ -53,22 +53,30 @@ powershell -c "iex ((Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/r
 > git clone https://github.com/realsjpeng/opencode-academic-enhanced.git; cd opencode-academic-enhanced; .\start.ps1
 > ```
 
-脚本会自动根据系统语言显示中文/英文提示，检测网络环境，询问配置，拉取镜像，启动容器并打开浏览器。
+脚本自动处理所有事情：
+
+- **端口** — 询问你（默认 `4096`），如果被占用会自动递增
+- **数据目录** — 询问你（默认 `./opencode-data`）—— 保存聊天记录、API Key、配置；容器内挂载到 `/home/user/.local/share/opencode`
+- **工作目录** — 询问你（默认当前目录 `.`）—— 你的项目文件；容器内挂载到 `/workspace`，AI 可以直接读写
+- **升级** — 检测已有容器，询问是否拉取新版镜像并保留所有配置和数据
+- **桌面程序** — 自动安装 OpenCode Desktop 原生应用，配置其连接到此容器并启动
 
 ### 方式 B：Docker Compose
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/realsjpeng/opencode-academic-enhanced/main/docker-compose.yml -o docker-compose.yml
 curl -fsSL https://raw.githubusercontent.com/realsjpeng/opencode-academic-enhanced/main/.env.example -o .env.example
-cp .env.example .env   # 编辑 .env 自定义配置
+cp .env.example .env   # 编辑 PORT、DATA_DIR、WORKSPACE
 docker compose up -d
 ```
+
+默认值与脚本一致：端口 `4096`、数据目录 `./data`、工作目录 `.`。编辑 `.env` 自定义。
 
 ### 方式 C：手动 Docker 命令
 
 ```bash
 docker pull ghcr.io/realsjpeng/opencode-academic-enhanced:latest
-docker run -d --name opencode-academic -p 4096:4096 \
+docker run -d --name opencode-academic-enhanced -p 4096:4096 \
   -v "${PWD}/data:/home/user/.local/share/opencode" \
   -v "${PWD}:/workspace" \
   --restart unless-stopped \
@@ -147,7 +155,7 @@ Step 3: 论文写作
 首次启动后配置 API Key：
 
 ```bash
-docker exec -it opencode-academic opencode providers
+docker exec -it opencode-academic-enhanced opencode providers
 ```
 
 Key 保存在持久化目录中，删除容器后不丢失。
@@ -158,7 +166,7 @@ Key 保存在持久化目录中，删除容器后不丢失。
 |---|---|
 | **A: 一键脚本** | 重新运行脚本，自动检测已有容器并提供保留配置的升级选项 |
 | **B: Docker Compose** | `docker compose pull && docker compose up -d` |
-| **C: 手动 Docker** | `docker pull ghcr.io/realsjpeng/opencode-academic-enhanced:latest && docker stop opencode-academic && docker rm opencode-academic && docker run -d --name opencode-academic -p 4096:4096 -v /your/data/dir:/home/user/.local/share/opencode -v "${PWD}:/workspace" --restart unless-stopped ghcr.io/realsjpeng/opencode-academic-enhanced:latest` |
+| **C: 手动 Docker** | `docker pull ghcr.io/realsjpeng/opencode-academic-enhanced:latest && docker stop opencode-academic-enhanced && docker rm opencode-academic-enhanced && docker run -d --name opencode-academic-enhanced -p 4096:4096 -v /your/data/dir:/home/user/.local/share/opencode -v "${PWD}:/workspace" --restart unless-stopped ghcr.io/realsjpeng/opencode-academic-enhanced:latest` |
 
 ---
 

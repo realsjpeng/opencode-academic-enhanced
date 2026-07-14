@@ -421,7 +421,10 @@
         <span data-i18n="qsA1">✅ 自动检测网络</span><br>
         <span data-i18n="qsA2">✅ 交互式配置</span><br>
         <span data-i18n="qsA3">✅ 端口冲突自递增</span><br>
-        <span data-i18n="qsA4">✅ 支持升级已有容器</span>
+        <span data-i18n="qsA4">✅ 支持升级已有容器</span><br>
+        <span data-i18n="qsA5">✅ 工作目录挂载到 /workspace</span><br>
+        <span data-i18n="qsA6">✅ 聊天/配置保存在 .opencode-data</span><br>
+        <span data-i18n="qsA7">✅ 可选安装 Desktop 原生应用</span>
       </div>
     </div>
     <div class="card" style="text-align:center">
@@ -435,7 +438,9 @@
       </div>
       <div style="margin-top:0.8rem; font-size:0.8rem; color:var(--text-secondary)">
         <span data-i18n="qsB1">✅ 环境变量自定义</span><br>
-        <span data-i18n="qsB2">✅ .env 配置管理</span>
+        <span data-i18n="qsB2">✅ .env 配置管理</span><br>
+        <span data-i18n="qsB3">✅ 默认端口 4096 / data ./data</span><br>
+        <span data-i18n="qsB4">✅ 工作目录挂载到 /workspace</span>
       </div>
     </div>
     <div class="card" style="text-align:center">
@@ -446,7 +451,7 @@
         &nbsp;&nbsp;realsjpeng/<br>
         &nbsp;&nbsp;opencode-academic-enhanced<br><br>
         docker run -d -p 4096:4096 \<br>
-        &nbsp;&nbsp;--name opencode-academic \<br>
+        &nbsp;&nbsp;--name opencode-academic-enhanced \<br>
         &nbsp;&nbsp;ghcr.io/...
       </div>
       <div style="margin-top:0.8rem; font-size:0.8rem; color:var(--text-secondary)">
@@ -748,9 +753,14 @@ const i18n = {
     qsA2: "✅ 交互式配置",
     qsA3: "✅ 端口冲突自递增",
     qsA4: "✅ 支持升级已有容器",
+    qsA5: "✅ 工作目录挂载到 /workspace",
+    qsA6: "✅ 聊天/配置保存在 .opencode-data",
+    qsA7: "✅ 可选安装 Desktop 原生应用",
     qsB: "Docker Compose",
     qsB1: "✅ 环境变量自定义",
     qsB2: "✅ .env 配置管理",
+    qsB3: "✅ 默认端口 4096 / data ./data",
+    qsB4: "✅ 工作目录挂载到 /workspace",
     qsC: "手动 Docker",
     qsC1: "✅ 最灵活",
     qsC2: "✅ 适用于 CI/CD",
@@ -868,9 +878,14 @@ const i18n = {
     qsA2: "✅ Interactive setup",
     qsA3: "✅ Auto port conflict resolution",
     qsA4: "✅ Upgrade existing containers",
+    qsA5: "✅ Workspace mounted to /workspace",
+    qsA6: "✅ Chat/config persisted in .opencode-data",
+    qsA7: "✅ Optional Desktop native app install",
     qsB: "Docker Compose",
     qsB1: "✅ Custom env variables",
     qsB2: "✅ .env config management",
+    qsB3: "✅ Default port 4096 / data ./data",
+    qsB4: "✅ Workspace mounted to /workspace",
     qsC: "Manual Docker",
     qsC1: "✅ Most flexible",
     qsC2: "✅ CI/CD ready",

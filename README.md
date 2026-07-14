@@ -53,22 +53,30 @@ powershell -c "iex ((Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/r
 > git clone https://github.com/realsjpeng/opencode-academic-enhanced.git; cd opencode-academic-enhanced; .\start.ps1
 > ```
 
-The script auto-detects system language (Chinese/English), checks network, prompts for configuration, pulls the image, starts the container, and opens your browser.
+The script handles everything automatically:
+
+- **Port** — prompts you (default `4096`), auto-increments if busy
+- **Data dir** — prompts you (default `./opencode-data`) — stores chat history, API keys, config; mounted to `/home/user/.local/share/opencode` inside the container
+- **Workspace** — prompts you (default current directory `.`) — your project files; mounted to `/workspace` inside the container so AI can read/write them
+- **Upgrade** — detects an existing container and offers to pull a newer image while preserving all config and data
+- **Desktop** — auto-installs the native OpenCode Desktop app, configures it to connect to this container, and launches it
 
 ### Option B: Docker Compose
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/realsjpeng/opencode-academic-enhanced/main/docker-compose.yml -o docker-compose.yml
 curl -fsSL https://raw.githubusercontent.com/realsjpeng/opencode-academic-enhanced/main/.env.example -o .env.example
-cp .env.example .env   # edit .env to customize
+cp .env.example .env   # edit PORT, DATA_DIR, WORKSPACE
 docker compose up -d
 ```
+
+Same defaults as the script: port `4096`, data dir `./data`, workspace `.`. Edit `.env` to customize.
 
 ### Option C: Manual Docker Run
 
 ```bash
 docker pull ghcr.io/realsjpeng/opencode-academic-enhanced:latest
-docker run -d --name opencode-academic -p 4096:4096 \
+docker run -d --name opencode-academic-enhanced -p 4096:4096 \
   -v "${PWD}/data:/home/user/.local/share/opencode" \
   -v "${PWD}:/workspace" \
   --restart unless-stopped \
@@ -147,7 +155,7 @@ Chat history, API keys, and configuration are persisted via Docker volumes. The 
 Configure API keys after first start:
 
 ```bash
-docker exec -it opencode-academic opencode providers
+docker exec -it opencode-academic-enhanced opencode providers
 ```
 
 Keys are saved to the persistent data directory and survive container deletion.
@@ -158,7 +166,7 @@ Keys are saved to the persistent data directory and survive container deletion.
 |---|---|
 | **A: One-Click Script** | Re-run the script — it detects the existing container and offers to upgrade with preserved config |
 | **B: Docker Compose** | `docker compose pull && docker compose up -d` |
-| **C: Manual Docker** | `docker pull ghcr.io/realsjpeng/opencode-academic-enhanced:latest && docker stop opencode-academic && docker rm opencode-academic && docker run -d --name opencode-academic -p 4096:4096 -v /your/data/dir:/home/user/.local/share/opencode -v "${PWD}:/workspace" --restart unless-stopped ghcr.io/realsjpeng/opencode-academic-enhanced:latest` |
+| **C: Manual Docker** | `docker pull ghcr.io/realsjpeng/opencode-academic-enhanced:latest && docker stop opencode-academic-enhanced && docker rm opencode-academic-enhanced && docker run -d --name opencode-academic-enhanced -p 4096:4096 -v /your/data/dir:/home/user/.local/share/opencode -v "${PWD}:/workspace" --restart unless-stopped ghcr.io/realsjpeng/opencode-academic-enhanced:latest` |
 
 ---
 

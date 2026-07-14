@@ -5,7 +5,7 @@
 services:
   opencode:
     image: ghcr.io/realsjpeng/opencode-academic-enhanced:latest
-    container_name: opencode-academic
+    container_name: opencode-academic-enhanced
     restart: unless-stopped
     ports:
       - "${PORT:-4096}:4096"
